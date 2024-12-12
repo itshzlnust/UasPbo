@@ -1,0 +1,67 @@
+entity-relationship-diagram
+
+admin {
+    id_admin int pk
+    id_users int fk
+    id_film int fk
+    id_review int fk
+    password varchar(255)
+    email varchar(100)
+    created_at timestamp
+}
+
+film {
+    id_film int pk
+    id_review int fk
+    title_film varchar(100)
+    synopsis varchar(1000)
+    director varchar(100)
+    duration float
+}
+
+reviewrating {
+    id_review int pk
+    id_users int fk
+    id_film int fk
+    review text
+    rating decimal(2,1)
+    created_at timestamp
+}
+
+users {
+    id_users int pk
+    username varchar(100)
+    password varchar(255)
+    email varchar(100)
+    created_at timestamp
+}
+
+watchlist {
+    id_watchlist int pk
+    id_users int fk
+    id_film int fk
+    added_at timestamp
+}
+
+genre {
+    id_genre int pk
+    id_film int fk
+    genre varchar(100)
+}
+
+release_year {
+    id_release_year int pk
+    id_film int fk
+    release_year int
+}
+
+admin.id_users > users.id_users
+admin.id_film > film.id_film
+admin.id_review > reviewrating.id_review
+genre.id_film > film.id_film
+release_year.id_film > film.id_film
+film.id_review > reviewrating.id_review
+reviewrating.id_users > users.id_users
+reviewrating.id_film > film.id_film
+watchlist.id_users > users.id_users
+watchlist.id_film > film.id_film
