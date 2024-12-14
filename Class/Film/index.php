@@ -2,89 +2,63 @@
 
 class Film
 {
-    private $conn;
+    private $db = null;
+    private $value = [];
 
-    public function __construct($db)
+    public function __construct()
     {
-        $this->conn = $db;
+        $this->db = Database::getInstance();
     }
 
-    public function addFilm($title, $synopsis, $director, $duration)
+    public function validate($form)
     {
-        $sql = "INSERT INTO film (title_film, synopsis, director, duration) VALUES (?, ?, ?, ?, ?, ?)";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("ssssss", $title, $synopsis, $director, $duration);
-        return $stmt->execute();
+        $validate = new Validation($form);
+        $validate->setRules('judul', 'Judul', ['required' => TRUE]);
+        $validate->setRules('tahun', 'Tahun', ['required' => TRUE, 'numeric' => TRUE]);
+        $validate->setRules('genre', 'Genre', ['required' => TRUE]);
+        $validate->setRules('sutradara', 'Sutradara', ['required' => TRUE]);
+        $validate->setRules('durasi', 'Durasi', ['required' => TRUE, 'numeric' => TRUE]);
+        $validate->setRules('sinopsis', 'Sinopsis', ['required' => TRUE]);
+        $validate->setRules('poster', 'Poster', ['required' => TRUE]);
+
+        if ($validate->passed() === FALSE) {
+            return $validate->getErrors();
+        }
+
+        return TRUE;
     }
 
-    public function updateFilm($id, $title, $synopsis, $director, $duration)
+    public function addFilm($data)
     {
-        $sql = "UPDATE film SET title_film = ?, synopsis = ?, director = ?, duration = ? WHERE id_film = ?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("ssssssi", $title, $synopsis, $director, $duration, $id);
-        return $stmt->execute();
+        return $this->db->insert('film', $data);
     }
 
-    public function readTables($id)
+    public function getFilm($id = null)
     {
-        $sql = "SELECT * FROM film WHERE id_film = ?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        return $stmt->get_result();
+        if ($id) {
+            return $this->db->getWhere('film', 'id', $id);
+        }
+
+        return $this->db->get('film');
+    }
+
+    public function updateFilm($id, $data)
+    {
+        $this->db->update('film', $data, "id = $id");
     }
 
     public function deleteFilm($id)
     {
-        $sql = "DELETE FROM film WHERE id_film = ?";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("i", $id);
-        return $stmt->execute();
+        $this->db->delete('film', $id);
+    }
+
+    public function searchFilm($keyword)
+    {
+        return $this->db->search('film', 'judul', $keyword);
+    }
+
+    public function getErrors()
+    {
+        return $this->value;
     }
 }
-
-
-// Database connection
-$mysqli = new mysqli("localhost", "username", "password", "database");
-
-// Check connection
-if ($mysqli->connect_error) {
-    die("Connection failed: " . $mysqli->connect_error);
-}
-
-// Create Film object
-$film = new Film($mysqli);
-
-// Add a new film
-if ($film->addFilm("Inception", "A thief who steals corporate secrets through the use of dream-sharing technology.",  "Christopher Nolan", 148)) {
-    echo "Film added successfully.";
-} else {
-    echo "Failed to add film.";
-}
-
-// Update an existing film
-if ($film->updateFilm(1, "Inception", "A thief who steals corporate secrets through the use of dream-sharing technology.", "Christopher Nolan", 148)) {
-    echo "Film updated successfully.";
-} else {
-    echo "Failed to update film.";
-}
-
-// Read a film's details
-$result = $film->readTables(1);
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        echo "ID: " . $row["id_film"] . " - Title: " . $row["title_film"] . " - Synopsis: " . $row["synopsis"] . $row["release_year"] . " - Director: " . $row["director"] . " - Duration: " . $row["duration"] . "<br>";
-    }
-} else {
-    echo "No film found.";
-}
-
-// Delete a film
-if ($film->deleteFilm(1)) {
-    echo "Film deleted successfully.";
-} else {
-    echo "Failed to delete film.";
-}
-
-// Close connection
-$mysqli->close();
